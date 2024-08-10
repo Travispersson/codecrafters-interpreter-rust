@@ -2,6 +2,8 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 
+use interpreter_starter_rust::Scanner;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
@@ -22,10 +24,10 @@ fn main() {
                 String::new()
             });
 
-            if !file_contents.is_empty() {
-                panic!("Scanner not implemented");
-            } else {
-                println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
+            let mut scanner = Scanner::from(file_contents.as_str());
+            let tokens = scanner.scan_tokens();
+            for token in tokens {
+                println!("{}", token);
             }
         }
         _ => {

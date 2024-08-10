@@ -1,7 +1,7 @@
-use std::fmt::write;
+use std::num::NonZeroUsize;
 
-#[derive(Debug)]
-enum TokenType {
+#[derive(Debug, PartialEq)]
+pub enum TokenType {
     // single character tokens
 
     // one or two character tokens
@@ -12,29 +12,57 @@ enum TokenType {
     Eof,
 }
 
-#[derive(Debug)]
-enum Literal {
+impl std::fmt::Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TokenType::Eof => write!(f, "EOF"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Literal {
     // String(..)
     // Number(..)
     // Bool(..)
     None,
 }
 
-#[derive(Debug)]
+impl std::fmt::Display for Literal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Literal::None => write!(f, "null"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
     literal: Literal,
-    line: usize,
+    line: NonZeroUsize,
+}
+
+impl Token {
+    pub fn new(
+        token_type: TokenType,
+        lexeme: String,
+        literal: Literal,
+        line: NonZeroUsize,
+    ) -> Self {
+        Self {
+            token_type,
+            lexeme,
+            literal,
+            line,
+        }
+    }
 }
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:?} {:?} {:?}",
-            self.token_type, self.lexeme, self.literal,
-        )
+        write!(f, "{} {} {}", self.token_type, self.lexeme, self.literal,)
     }
 }
 
@@ -48,10 +76,10 @@ mod tests {
             token_type: TokenType::Eof,
             lexeme: String::from(""),
             literal: Literal::None,
-            line: 0,
+            line: NonZeroUsize::new(1).unwrap(),
         };
         let print = tk.to_string();
 
-        assert_eq!(print, String::from("Eof \"\" None"))
+        assert_eq!(print, String::from("EOF  null"))
     }
 }

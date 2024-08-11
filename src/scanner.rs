@@ -62,6 +62,12 @@ impl<'a> Scanner<'a> {
             ')' => self.add_token_without_literal(TokenType::RightParen),
             '{' => self.add_token_without_literal(TokenType::LeftBrace),
             '}' => self.add_token_without_literal(TokenType::RightBrace),
+            '.' => self.add_token_without_literal(TokenType::Dot),
+            '*' => self.add_token_without_literal(TokenType::Star),
+            '+' => self.add_token_without_literal(TokenType::Plus),
+            '-' => self.add_token_without_literal(TokenType::Minus),
+            ';' => self.add_token_without_literal(TokenType::Semicolon),
+            ',' => self.add_token_without_literal(TokenType::Comma),
             _ => {
                 self.has_error = true;
                 eprintln!("{}: Unexpected character {}", self.line.get(), c);
@@ -185,6 +191,79 @@ mod tests {
             Token::new(
                 TokenType::RightBrace,
                 String::from("}"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_part_4() {
+        let contents = "({*.,+*})";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens();
+        let expected_tokens = [
+            Token::new(
+                TokenType::LeftParen,
+                String::from("("),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::LeftBrace,
+                String::from("{"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Star,
+                String::from("*"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Dot,
+                String::from("."),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Comma,
+                String::from(","),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Plus,
+                String::from("+"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Star,
+                String::from("*"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::RightBrace,
+                String::from("}"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::RightParen,
+                String::from(")"),
                 Literal::None,
                 NonZeroUsize::new(1).unwrap(),
             ),

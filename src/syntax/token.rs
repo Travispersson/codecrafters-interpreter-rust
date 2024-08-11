@@ -7,6 +7,12 @@ pub enum TokenType {
     RightParen,
     LeftBrace,
     RightBrace,
+    Comma,
+    Dot,
+    Minus,
+    Plus,
+    Semicolon,
+    Star,
     // one or two character tokens
 
     // literals
@@ -18,11 +24,17 @@ pub enum TokenType {
 impl std::fmt::Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TokenType::Eof => write!(f, "EOF"),
-            TokenType::LeftParen => write!(f, "LEFT_PAREN"),
-            TokenType::RightParen => write!(f, "RIGHT_PAREN"),
-            TokenType::LeftBrace => write!(f, "LEFT_BRACE"),
-            TokenType::RightBrace => write!(f, "RIGHT_BRACE"),
+            Self::Eof => write!(f, "EOF"),
+            Self::LeftParen => write!(f, "LEFT_PAREN"),
+            Self::RightParen => write!(f, "RIGHT_PAREN"),
+            Self::LeftBrace => write!(f, "LEFT_BRACE"),
+            Self::RightBrace => write!(f, "RIGHT_BRACE"),
+            Self::Comma => write!(f, "COMMA"),
+            Self::Dot => write!(f, "DOT"),
+            Self::Minus => write!(f, "MINUS"),
+            Self::Plus => write!(f, "PLUS"),
+            Self::Semicolon => write!(f, "SEMICOLON"),
+            Self::Star => write!(f, "STAR"),
         }
     }
 }
@@ -38,7 +50,7 @@ pub enum Literal {
 impl std::fmt::Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Literal::None => write!(f, "null"),
+            Self::None => write!(f, "null"),
         }
     }
 }

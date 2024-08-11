@@ -54,6 +54,7 @@ impl<'a> Scanner<'a> {
     fn peek(&self) -> Option<char> {
         // https://doc.rust-lang.org/std/iter/struct.Peekable.html We could look into this for chars vec
         // because this is ugly af...
+        // also this makes indexing O(n) ... not nice :S
         match self.source.char_indices().find(|(o, _)| *o == self.current) {
             None => None,
             Some((_, c)) => Some(c),
@@ -79,6 +80,31 @@ impl<'a> Scanner<'a> {
         self.current >= self.source.len()
     }
 
+    fn increase_line(&mut self) {
+        unsafe { self.line = NonZeroUsize::new_unchecked(self.line.get() + 1) }
+    }
+
+    fn add_string(&mut self) {
+        while self.peek() != Some('"') && !self.peek().is_none() && !self.is_at_end() {
+            if self.peek() == Some('\n') {
+                self.increase_line()
+            }
+
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            self.has_error = true;
+            eprintln!("[line {}] Error: Unterminated string.", self.line.get(),);
+            return;
+        }
+
+        // the closing "
+        self.advance();
+
+        let val = &self.source[self.start + '"'.len_utf8()..self.current - '"'.len_utf8()];
+        self.add_token(TokenType::String, Literal::String(val.to_string()));
+    }
     pub fn scan_token(&mut self) {
         let c = self.advance();
         let Some(c) = c else {
@@ -117,13 +143,11 @@ impl<'a> Scanner<'a> {
             },
             '/' => match self.advance_if_match('/') {
                 // We do not create a token for comments
-                Some(_) => loop {
-                    if self.peek() != Some('\n') && !self.peek().is_none() && !self.is_at_end() {
+                Some(_) => {
+                    while self.peek() != Some('\n') && !self.peek().is_none() && !self.is_at_end() {
                         self.advance();
-                    } else {
-                        break;
                     }
-                },
+                }
                 _ => self.add_token_without_literal(TokenType::Slash),
             },
 
@@ -131,7 +155,10 @@ impl<'a> Scanner<'a> {
             ' ' | '\r' | '\t' => {}
 
             // new lines
-            '\n' => self.line = unsafe { NonZeroUsize::new_unchecked(self.line.get() + 1) },
+            '\n' => self.increase_line(),
+
+            // string literals
+            '"' => self.add_string(),
 
             // catch-all unsupported tokens
             _ => {
@@ -153,11 +180,10 @@ impl<'a> Scanner<'a> {
 
         self.add_token_without_literal(TokenType::Eof);
 
-        if self.has_error {
-            return Err(&self.tokens);
+        match self.has_error {
+            false => Ok(&self.tokens),
+            _ => Err(&self.tokens),
         }
-
-        Ok(&self.tokens)
     }
 }
 
@@ -501,6 +527,31 @@ mod tests {
                 TokenType::Slash,
                 String::from("/"),
                 Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_string_literal() {
+        let contents = "\"foo bar\"";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::String,
+                String::from("\"foo bar\""),
+                Literal::String("foo bar".to_string()),
                 NonZeroUsize::new(1).unwrap(),
             ),
             Token::new(

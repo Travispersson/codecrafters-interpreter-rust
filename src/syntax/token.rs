@@ -26,7 +26,7 @@ pub enum TokenType {
     Slash,
 
     // literals
-
+    String,
     // Keywords
     Eof,
 }
@@ -54,6 +54,7 @@ impl std::fmt::Display for TokenType {
             Self::Greater => write!(f, "GREATER"),
             Self::GreaterEqual => write!(f, "GREATER_EQUAL"),
             Self::Slash => write!(f, "SLASH"),
+            Self::String => write!(f, "STRING"),
         }
 
         // operators
@@ -62,7 +63,7 @@ impl std::fmt::Display for TokenType {
 
 #[derive(Debug, PartialEq)]
 pub enum Literal {
-    // String(..)
+    String(String),
     // Number(..)
     // Bool(..)
     None,
@@ -72,6 +73,7 @@ impl std::fmt::Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::None => write!(f, "null"),
+            Self::String(s) => write!(f, "{}", s),
         }
     }
 }

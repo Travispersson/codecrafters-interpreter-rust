@@ -5,7 +5,8 @@ pub enum TokenType {
     // single character tokens
     LeftParen,
     RightParen,
-
+    LeftBrace,
+    RightBrace,
     // one or two character tokens
 
     // literals
@@ -20,6 +21,8 @@ impl std::fmt::Display for TokenType {
             TokenType::Eof => write!(f, "EOF"),
             TokenType::LeftParen => write!(f, "LEFT_PAREN"),
             TokenType::RightParen => write!(f, "RIGHT_PAREN"),
+            TokenType::LeftBrace => write!(f, "LEFT_BRACE"),
+            TokenType::RightBrace => write!(f, "RIGHT_BRACE"),
         }
     }
 }

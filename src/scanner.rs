@@ -60,6 +60,8 @@ impl<'a> Scanner<'a> {
         match c {
             '(' => self.add_token_without_literal(TokenType::LeftParen),
             ')' => self.add_token_without_literal(TokenType::RightParen),
+            '{' => self.add_token_without_literal(TokenType::LeftBrace),
+            '}' => self.add_token_without_literal(TokenType::RightBrace),
             _ => {
                 self.has_error = true;
                 eprintln!("{}: Unexpected character {}", self.line.get(), c);
@@ -140,6 +142,49 @@ mod tests {
             Token::new(
                 TokenType::RightParen,
                 String::from(")"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_part_3() {
+        let contents = "{{}}";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens();
+        let expected_tokens = [
+            Token::new(
+                TokenType::LeftBrace,
+                String::from("{"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::LeftBrace,
+                String::from("{"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::RightBrace,
+                String::from("}"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::RightBrace,
+                String::from("}"),
                 Literal::None,
                 NonZeroUsize::new(1).unwrap(),
             ),

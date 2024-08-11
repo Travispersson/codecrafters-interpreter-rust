@@ -13,7 +13,16 @@ pub enum TokenType {
     Plus,
     Semicolon,
     Star,
+
     // one or two character tokens
+    Bang,
+    BangEqual,
+    Equal,
+    EqualEqual,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
 
     // literals
 
@@ -35,7 +44,17 @@ impl std::fmt::Display for TokenType {
             Self::Plus => write!(f, "PLUS"),
             Self::Semicolon => write!(f, "SEMICOLON"),
             Self::Star => write!(f, "STAR"),
+            Self::Bang => write!(f, "BANG"),
+            Self::BangEqual => write!(f, "BANG_EQUAL"),
+            Self::Equal => write!(f, "EQUAL"),
+            Self::EqualEqual => write!(f, "EQUAL_EQUAL"),
+            Self::Less => write!(f, "LESS"),
+            Self::LessEqual => write!(f, "LESS_EQUAL"),
+            Self::Greater => write!(f, "GREATER"),
+            Self::GreaterEqual => write!(f, "GREATER_EQUAL"),
         }
+
+        // operators
     }
 }
 

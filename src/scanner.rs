@@ -68,6 +68,24 @@ impl<'a> Scanner<'a> {
             '-' => self.add_token_without_literal(TokenType::Minus),
             ';' => self.add_token_without_literal(TokenType::Semicolon),
             ',' => self.add_token_without_literal(TokenType::Comma),
+
+            // might have to retrieve another char
+            '!' => match self.advance_if_match('=') {
+                Some(_) => self.add_token_without_literal(TokenType::BangEqual),
+                _ => self.add_token_without_literal(TokenType::Bang),
+            },
+            '=' => match self.advance_if_match('=') {
+                Some(_) => self.add_token_without_literal(TokenType::EqualEqual),
+                _ => self.add_token_without_literal(TokenType::Equal),
+            },
+            '>' => match self.advance_if_match('=') {
+                Some(_) => self.add_token_without_literal(TokenType::GreaterEqual),
+                _ => self.add_token_without_literal(TokenType::Greater),
+            },
+            '<' => match self.advance_if_match('=') {
+                Some(_) => self.add_token_without_literal(TokenType::LessEqual),
+                _ => self.add_token_without_literal(TokenType::Less),
+            },
             _ => {
                 self.has_error = true;
                 eprintln!(
@@ -76,6 +94,24 @@ impl<'a> Scanner<'a> {
                     c
                 );
             }
+        }
+    }
+
+    fn advance_if_match(&mut self, to_match: char) -> Option<char> {
+        if self.is_at_end() {
+            return None;
+        }
+
+        match self.advance() {
+            Some(c) => {
+                if c == to_match {
+                    Some(c)
+                } else {
+                    self.current -= 1;
+                    None
+                }
+            }
+            _ => None,
         }
     }
 
@@ -328,6 +364,49 @@ mod tests {
             _ => {
                 res.expect_err("Test is incorrect, this should be an error");
             }
+        }
+    }
+
+    #[test]
+    fn test_assignment_and_equal_mix() {
+        let contents = "=(==)";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::Equal,
+                String::from("="),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::LeftParen,
+                String::from("("),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::EqualEqual,
+                String::from("=="),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::RightParen,
+                String::from(")"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
         }
     }
 }

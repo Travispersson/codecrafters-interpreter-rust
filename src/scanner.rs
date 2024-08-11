@@ -18,18 +18,40 @@ impl<'a> Scanner<'a> {
             tokens: vec![],
             start: 0,
             current: 0,
-            line: NonZeroUsize::new(1).unwrap(),
+            line: unsafe { NonZeroUsize::new_unchecked(1) },
             has_error: false,
         }
     }
 
     fn advance(&mut self) -> Option<char> {
-        let c = self.source.chars().nth(self.current);
+        let c = self.peek();
         if c.is_some() {
             self.current += 1;
         }
 
         c
+    }
+
+    fn advance_if_match(&mut self, to_match: char) -> Option<char> {
+        if self.is_at_end() {
+            return None;
+        }
+
+        match self.advance() {
+            Some(c) => {
+                if c == to_match {
+                    Some(c)
+                } else {
+                    self.current -= 1;
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.source.chars().nth(self.current)
     }
 
     fn add_token_without_literal(&mut self, token_type: TokenType) {
@@ -58,6 +80,7 @@ impl<'a> Scanner<'a> {
         };
 
         match c {
+            // single-character tokens
             '(' => self.add_token_without_literal(TokenType::LeftParen),
             ')' => self.add_token_without_literal(TokenType::RightParen),
             '{' => self.add_token_without_literal(TokenType::LeftBrace),
@@ -69,7 +92,7 @@ impl<'a> Scanner<'a> {
             ';' => self.add_token_without_literal(TokenType::Semicolon),
             ',' => self.add_token_without_literal(TokenType::Comma),
 
-            // might have to retrieve another char
+            // single-or-double character tokens
             '!' => match self.advance_if_match('=') {
                 Some(_) => self.add_token_without_literal(TokenType::BangEqual),
                 _ => self.add_token_without_literal(TokenType::Bang),
@@ -86,6 +109,25 @@ impl<'a> Scanner<'a> {
                 Some(_) => self.add_token_without_literal(TokenType::LessEqual),
                 _ => self.add_token_without_literal(TokenType::Less),
             },
+            '/' => match self.advance_if_match('/') {
+                // We do not create a token for comments
+                Some(_) => loop {
+                    if self.peek() != Some('\n') && !self.is_at_end() {
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                },
+                _ => self.add_token_without_literal(TokenType::Slash),
+            },
+
+            // ignore whitespace
+            ' ' | '\r' | '\t' => {}
+
+            // new lines
+            '\n' => self.line = unsafe { NonZeroUsize::new_unchecked(self.line.get() + 1) },
+
+            // catch-all unsupported tokens
             _ => {
                 self.has_error = true;
                 eprintln!(
@@ -94,24 +136,6 @@ impl<'a> Scanner<'a> {
                     c
                 );
             }
-        }
-    }
-
-    fn advance_if_match(&mut self, to_match: char) -> Option<char> {
-        if self.is_at_end() {
-            return None;
-        }
-
-        match self.advance() {
-            Some(c) => {
-                if c == to_match {
-                    Some(c)
-                } else {
-                    self.current -= 1;
-                    None
-                }
-            }
-            _ => None,
         }
     }
 
@@ -395,6 +419,81 @@ mod tests {
             Token::new(
                 TokenType::RightParen,
                 String::from(")"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_ignore_comment() {
+        let contents = "(//this is a comment";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::LeftParen,
+                String::from("("),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_single_slash() {
+        let contents = "/";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::Slash,
+                String::from("/"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_ignore_whitespace() {
+        let contents = " /  \t \r";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::Slash,
+                String::from("/"),
                 Literal::None,
                 NonZeroUsize::new(1).unwrap(),
             ),

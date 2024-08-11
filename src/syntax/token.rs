@@ -23,6 +23,7 @@ pub enum TokenType {
     LessEqual,
     Greater,
     GreaterEqual,
+    Slash,
 
     // literals
 
@@ -52,6 +53,7 @@ impl std::fmt::Display for TokenType {
             Self::LessEqual => write!(f, "LESS_EQUAL"),
             Self::Greater => write!(f, "GREATER"),
             Self::GreaterEqual => write!(f, "GREATER_EQUAL"),
+            Self::Slash => write!(f, "SLASH"),
         }
 
         // operators

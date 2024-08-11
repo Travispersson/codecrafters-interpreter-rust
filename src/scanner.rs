@@ -2,6 +2,7 @@ use std::num::NonZeroUsize;
 
 use crate::syntax::token::{Literal, Token, TokenType};
 
+#[derive(Debug)]
 pub struct Scanner<'a> {
     source: &'a str,
     tokens: Vec<Token>,
@@ -25,8 +26,8 @@ impl<'a> Scanner<'a> {
 
     fn advance(&mut self) -> Option<char> {
         let c = self.peek();
-        if c.is_some() {
-            self.current += 1;
+        if let Some(c) = c {
+            self.current += c.len_utf8();
         }
 
         c
@@ -42,7 +43,7 @@ impl<'a> Scanner<'a> {
                 if c == to_match {
                     Some(c)
                 } else {
-                    self.current -= 1;
+                    self.current -= c.len_utf8();
                     None
                 }
             }
@@ -51,7 +52,12 @@ impl<'a> Scanner<'a> {
     }
 
     fn peek(&self) -> Option<char> {
-        self.source.chars().nth(self.current)
+        // https://doc.rust-lang.org/std/iter/struct.Peekable.html We could look into this for chars vec
+        // because this is ugly af...
+        match self.source.char_indices().find(|(o, _)| *o == self.current) {
+            None => None,
+            Some((_, c)) => Some(c),
+        }
     }
 
     fn add_token_without_literal(&mut self, token_type: TokenType) {
@@ -112,7 +118,7 @@ impl<'a> Scanner<'a> {
             '/' => match self.advance_if_match('/') {
                 // We do not create a token for comments
                 Some(_) => loop {
-                    if self.peek() != Some('\n') && !self.is_at_end() {
+                    if self.peek() != Some('\n') && !self.peek().is_none() && !self.is_at_end() {
                         self.advance();
                     } else {
                         break;
@@ -460,15 +466,15 @@ mod tests {
     }
 
     #[test]
-    fn test_single_slash() {
-        let contents = "/";
+    fn test_unicode() {
+        let contents = "(///Unicode:£§᯽☺♣)";
         let mut scanner = Scanner::from(contents);
 
         let tokens = scanner.scan_tokens().unwrap();
         let expected_tokens = [
             Token::new(
-                TokenType::Slash,
-                String::from("/"),
+                TokenType::LeftParen,
+                String::from("("),
                 Literal::None,
                 NonZeroUsize::new(1).unwrap(),
             ),

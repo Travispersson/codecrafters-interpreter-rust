@@ -8,6 +8,7 @@ pub struct Scanner<'a> {
     start: usize,
     current: usize,
     line: NonZeroUsize,
+    pub has_error: bool,
 }
 
 impl<'a> Scanner<'a> {
@@ -18,12 +19,16 @@ impl<'a> Scanner<'a> {
             start: 0,
             current: 0,
             line: NonZeroUsize::new(1).unwrap(),
+            has_error: false,
         }
     }
 
     fn advance(&mut self) -> Option<char> {
         let c = self.source.chars().nth(self.current);
-        self.current = self.current + 1;
+        if c.is_some() {
+            self.current += 1;
+        }
+
         c
     }
 
@@ -46,18 +51,31 @@ impl<'a> Scanner<'a> {
         self.current >= self.source.len()
     }
 
-    fn scan_token(&self) {
-        unimplemented!()
+    pub fn scan_token(&mut self) {
+        let c = self.advance();
+        let Some(c) = c else {
+            return;
+        };
+
+        match c {
+            '(' => self.add_token_without_literal(TokenType::LeftParen),
+            ')' => self.add_token_without_literal(TokenType::RightParen),
+            _ => {
+                self.has_error = true;
+                eprintln!("{}: Unexpected character {}", self.line.get(), c);
+            }
+        }
     }
 
     pub fn scan_tokens(&mut self) -> &[Token] {
         while !self.is_at_end() {
-            self.start = self.current;
             self.scan_token();
+            self.start = self.current;
         }
 
         self.add_token_without_literal(TokenType::Eof);
-        return &self.tokens;
+
+        &self.tokens
     }
 }
 
@@ -84,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn impl_empty_source() {
+    fn test_part_1() {
         let contents = "";
         let mut scanner = Scanner::from(contents);
 
@@ -95,6 +113,43 @@ mod tests {
             Literal::None,
             NonZeroUsize::new(1).unwrap(),
         )];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_part_2() {
+        let contents = "(()";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens();
+        let expected_tokens = [
+            Token::new(
+                TokenType::LeftParen,
+                String::from("("),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::LeftParen,
+                String::from("("),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::RightParen,
+                String::from(")"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
         for (i, token) in tokens.iter().enumerate() {
             assert_eq!(*token, expected_tokens[i])
         }

@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+use std::process::exit;
 
 use interpreter_starter_rust::Scanner;
 
@@ -25,9 +26,17 @@ fn main() {
             });
 
             let mut scanner = Scanner::from(file_contents.as_str());
-            let tokens = scanner.scan_tokens();
+            let tokens = match scanner.scan_tokens() {
+                Err(tokens) => tokens,
+                Ok(tokens) => tokens,
+            };
+
             for token in tokens {
-                println!("{}", token);
+                println!("{token}");
+            }
+
+            if scanner.has_error {
+                exit(65)
             }
         }
         _ => {

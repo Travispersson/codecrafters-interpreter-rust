@@ -70,12 +70,16 @@ impl<'a> Scanner<'a> {
             ',' => self.add_token_without_literal(TokenType::Comma),
             _ => {
                 self.has_error = true;
-                eprintln!("{}: Unexpected character {}", self.line.get(), c);
+                eprintln!(
+                    "[line {}] Error: Unexpected character: {}",
+                    self.line.get(),
+                    c
+                );
             }
         }
     }
 
-    pub fn scan_tokens(&mut self) -> &[Token] {
+    pub fn scan_tokens(&mut self) -> Result<&[Token], &[Token]> {
         while !self.is_at_end() {
             self.scan_token();
             self.start = self.current;
@@ -83,7 +87,11 @@ impl<'a> Scanner<'a> {
 
         self.add_token_without_literal(TokenType::Eof);
 
-        &self.tokens
+        if self.has_error {
+            return Err(&self.tokens);
+        }
+
+        Ok(&self.tokens)
     }
 }
 
@@ -114,7 +122,7 @@ mod tests {
         let contents = "";
         let mut scanner = Scanner::from(contents);
 
-        let tokens = scanner.scan_tokens();
+        let tokens = scanner.scan_tokens().unwrap();
         let expected_tokens = [Token::new(
             TokenType::Eof,
             String::from(""),
@@ -131,7 +139,7 @@ mod tests {
         let contents = "(()";
         let mut scanner = Scanner::from(contents);
 
-        let tokens = scanner.scan_tokens();
+        let tokens = scanner.scan_tokens().unwrap();
         let expected_tokens = [
             Token::new(
                 TokenType::LeftParen,
@@ -168,7 +176,7 @@ mod tests {
         let contents = "{{}}";
         let mut scanner = Scanner::from(contents);
 
-        let tokens = scanner.scan_tokens();
+        let tokens = scanner.scan_tokens().unwrap();
         let expected_tokens = [
             Token::new(
                 TokenType::LeftBrace,
@@ -211,7 +219,7 @@ mod tests {
         let contents = "({*.,+*})";
         let mut scanner = Scanner::from(contents);
 
-        let tokens = scanner.scan_tokens();
+        let tokens = scanner.scan_tokens().unwrap();
         let expected_tokens = [
             Token::new(
                 TokenType::LeftParen,
@@ -276,6 +284,50 @@ mod tests {
         ];
         for (i, token) in tokens.iter().enumerate() {
             assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_part_5() {
+        let contents = ",.$(#";
+        let mut scanner = Scanner::from(contents);
+
+        let res = scanner.scan_tokens();
+        let expected_tokens = [
+            Token::new(
+                TokenType::Comma,
+                String::from(","),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Dot,
+                String::from("."),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::LeftParen,
+                String::from("("),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        match res {
+            Err(tokens) => {
+                for (i, token) in tokens.iter().enumerate() {
+                    assert_eq!(*token, expected_tokens[i])
+                }
+            }
+            _ => {
+                res.expect_err("Test is incorrect, this should be an error");
+            }
         }
     }
 }

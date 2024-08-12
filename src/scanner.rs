@@ -105,6 +105,29 @@ impl<'a> Scanner<'a> {
         let val = &self.source[self.start + '"'.len_utf8()..self.current - '"'.len_utf8()];
         self.add_token(TokenType::String, Literal::String(val.to_string()));
     }
+
+    fn add_number(&mut self) {
+        while self.peek().map_or(false, |c| c.is_ascii_digit()) {
+            self.advance();
+        }
+
+        if self.peek() == Some('.') {
+            self.current += '.'.len_utf8();
+            if self.peek().map_or(false, |c| c.is_ascii_digit()) {
+                self.advance();
+                while self.peek().map_or(false, |c| c.is_ascii_digit()) {
+                    self.advance();
+                }
+            }
+        }
+
+        let lexeme = &self.source[self.start..self.current];
+        self.add_token(
+            TokenType::Number,
+            Literal::Number(lexeme.parse().expect("should be a valid number")),
+        );
+    }
+
     pub fn scan_token(&mut self) {
         let c = self.advance();
         let Some(c) = c else {
@@ -162,12 +185,16 @@ impl<'a> Scanner<'a> {
 
             // catch-all unsupported tokens
             _ => {
-                self.has_error = true;
-                eprintln!(
-                    "[line {}] Error: Unexpected character: {}",
-                    self.line.get(),
-                    c
-                );
+                if c.is_ascii_digit() {
+                    self.add_number();
+                } else {
+                    self.has_error = true;
+                    eprintln!(
+                        "[line {}] Error: Unexpected character: {}",
+                        self.line.get(),
+                        c
+                    );
+                }
             }
         }
     }
@@ -552,6 +579,31 @@ mod tests {
                 TokenType::String,
                 String::from("\"foo bar\""),
                 Literal::String("foo bar".to_string()),
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_numbers() {
+        let contents = "1234.1234";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::Number,
+                String::from("1234.1234"),
+                Literal::Number(1234.1234),
                 NonZeroUsize::new(1).unwrap(),
             ),
             Token::new(

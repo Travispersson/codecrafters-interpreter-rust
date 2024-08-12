@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenType {
     // single character tokens
     LeftParen,
@@ -33,6 +33,24 @@ pub enum TokenType {
     Identifier,
 
     // Keywords
+    And,
+    Class,
+    Else,
+    False,
+    For,
+    Fun,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
+
+    // Special type meaning end of file
     Eof,
 }
 
@@ -62,9 +80,23 @@ impl std::fmt::Display for TokenType {
             Self::String => write!(f, "STRING"),
             Self::Number => write!(f, "NUMBER"),
             Self::Identifier => write!(f, "IDENTIFIER"),
+            Self::And => write!(f, "AND"),
+            Self::Class => write!(f, "AND"),
+            Self::Else => write!(f, "AND"),
+            Self::False => write!(f, "AND"),
+            Self::For => write!(f, "AND"),
+            Self::Fun => write!(f, "AND"),
+            Self::If => write!(f, "AND"),
+            Self::Nil => write!(f, "AND"),
+            Self::Or => write!(f, "AND"),
+            Self::Print => write!(f, "AND"),
+            Self::Return => write!(f, "AND"),
+            Self::Super => write!(f, "AND"),
+            Self::This => write!(f, "AND"),
+            Self::True => write!(f, "AND"),
+            Self::Var => write!(f, "AND"),
+            Self::While => write!(f, "AND"),
         }
-
-        // operators
     }
 }
 

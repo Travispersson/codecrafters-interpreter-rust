@@ -1,6 +1,28 @@
-use std::num::NonZeroUsize;
+use std::cell::LazyCell;
+use std::{collections::HashMap, num::NonZeroUsize};
 
 use crate::syntax::token::{Literal, Token, TokenType};
+
+const RESERVED_KEYWORDS: LazyCell<HashMap<&'static str, TokenType>> = LazyCell::new(|| {
+    let mut rkw = HashMap::new();
+    rkw.insert("and", TokenType::And);
+    rkw.insert("class", TokenType::Class);
+    rkw.insert("else", TokenType::Else);
+    rkw.insert("false", TokenType::False);
+    rkw.insert("for", TokenType::For);
+    rkw.insert("fun", TokenType::Fun);
+    rkw.insert("if", TokenType::If);
+    rkw.insert("nil", TokenType::Nil);
+    rkw.insert("or", TokenType::Or);
+    rkw.insert("print", TokenType::Print);
+    rkw.insert("return", TokenType::Return);
+    rkw.insert("super", TokenType::Super);
+    rkw.insert("this", TokenType::This);
+    rkw.insert("true", TokenType::True);
+    rkw.insert("var", TokenType::Var);
+    rkw.insert("while", TokenType::While);
+    rkw
+});
 
 #[derive(Debug)]
 pub struct Scanner<'a> {
@@ -138,7 +160,12 @@ impl<'a> Scanner<'a> {
             self.advance();
         }
 
-        self.add_token_without_literal(TokenType::Identifier)
+        let lexeme = &self.source[self.start..self.current];
+
+        match RESERVED_KEYWORDS.get(lexeme) {
+            Some(tt) => self.add_token_without_literal(*tt),
+            _ => self.add_token_without_literal(TokenType::Identifier),
+        };
     }
 
     pub fn scan_token(&mut self) {
@@ -655,6 +682,31 @@ mod tests {
             Token::new(
                 TokenType::Identifier,
                 String::from("_hello"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_reserved_keywords() {
+        let contents = "and";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::And,
+                String::from("and"),
                 Literal::None,
                 NonZeroUsize::new(1).unwrap(),
             ),

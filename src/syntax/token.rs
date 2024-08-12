@@ -76,7 +76,7 @@ impl std::fmt::Display for Literal {
         match self {
             Self::None => write!(f, "null"),
             Self::String(s) => write!(f, "{}", s),
-            Self::Number(n) => write!(f, "{}", n),
+            Self::Number(n) => write!(f, "{:?}", n),
         }
     }
 }

@@ -118,6 +118,8 @@ impl<'a> Scanner<'a> {
                 while self.peek().map_or(false, |c| c.is_ascii_digit()) {
                     self.advance();
                 }
+            } else {
+                self.current -= '.'.len_utf8();
             }
         }
 

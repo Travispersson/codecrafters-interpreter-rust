@@ -1,28 +1,9 @@
-use std::cell::LazyCell;
+use std::sync::OnceLock;
 use std::{collections::HashMap, num::NonZeroUsize};
 
 use crate::syntax::token::{Literal, Token, TokenType};
 
-const RESERVED_KEYWORDS: LazyCell<HashMap<&'static str, TokenType>> = LazyCell::new(|| {
-    let mut rkw = HashMap::new();
-    rkw.insert("and", TokenType::And);
-    rkw.insert("class", TokenType::Class);
-    rkw.insert("else", TokenType::Else);
-    rkw.insert("false", TokenType::False);
-    rkw.insert("for", TokenType::For);
-    rkw.insert("fun", TokenType::Fun);
-    rkw.insert("if", TokenType::If);
-    rkw.insert("nil", TokenType::Nil);
-    rkw.insert("or", TokenType::Or);
-    rkw.insert("print", TokenType::Print);
-    rkw.insert("return", TokenType::Return);
-    rkw.insert("super", TokenType::Super);
-    rkw.insert("this", TokenType::This);
-    rkw.insert("true", TokenType::True);
-    rkw.insert("var", TokenType::Var);
-    rkw.insert("while", TokenType::While);
-    rkw
-});
+static RESERVED_KEYWORDS: OnceLock<HashMap<&'static str, TokenType>> = OnceLock::new();
 
 #[derive(Debug)]
 pub struct Scanner<'a> {
@@ -162,7 +143,28 @@ impl<'a> Scanner<'a> {
 
         let lexeme = &self.source[self.start..self.current];
 
-        match RESERVED_KEYWORDS.get(lexeme) {
+        let x = RESERVED_KEYWORDS.get_or_init(|| {
+            let mut rkw = HashMap::new();
+            rkw.insert("and", TokenType::And);
+            rkw.insert("class", TokenType::Class);
+            rkw.insert("else", TokenType::Else);
+            rkw.insert("false", TokenType::False);
+            rkw.insert("for", TokenType::For);
+            rkw.insert("fun", TokenType::Fun);
+            rkw.insert("if", TokenType::If);
+            rkw.insert("nil", TokenType::Nil);
+            rkw.insert("or", TokenType::Or);
+            rkw.insert("print", TokenType::Print);
+            rkw.insert("return", TokenType::Return);
+            rkw.insert("super", TokenType::Super);
+            rkw.insert("this", TokenType::This);
+            rkw.insert("true", TokenType::True);
+            rkw.insert("var", TokenType::Var);
+            rkw.insert("while", TokenType::While);
+            rkw
+        });
+
+        match x.get(lexeme) {
             Some(tt) => self.add_token_without_literal(*tt),
             _ => self.add_token_without_literal(TokenType::Identifier),
         };

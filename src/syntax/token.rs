@@ -28,6 +28,10 @@ pub enum TokenType {
     // literals
     String,
     Number,
+
+    // ID
+    Identifier,
+
     // Keywords
     Eof,
 }
@@ -57,6 +61,7 @@ impl std::fmt::Display for TokenType {
             Self::Slash => write!(f, "SLASH"),
             Self::String => write!(f, "STRING"),
             Self::Number => write!(f, "NUMBER"),
+            Self::Identifier => write!(f, "IDENTIFIER"),
         }
 
         // operators

@@ -130,6 +130,17 @@ impl<'a> Scanner<'a> {
         );
     }
 
+    fn add_identifier(&mut self) {
+        while self
+            .peek()
+            .map_or(false, |c| c.is_alphanumeric() || c == '_')
+        {
+            self.advance();
+        }
+
+        self.add_token_without_literal(TokenType::Identifier)
+    }
+
     pub fn scan_token(&mut self) {
         let c = self.advance();
         let Some(c) = c else {
@@ -189,6 +200,8 @@ impl<'a> Scanner<'a> {
             _ => {
                 if c.is_ascii_digit() {
                     self.add_number();
+                } else if c.is_alphabetic() || c == '_' {
+                    self.add_identifier();
                 } else {
                     self.has_error = true;
                     eprintln!(
@@ -606,6 +619,43 @@ mod tests {
                 TokenType::Number,
                 String::from("1234.1234"),
                 Literal::Number(1234.1234),
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Eof,
+                String::from(""),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+        ];
+        for (i, token) in tokens.iter().enumerate() {
+            assert_eq!(*token, expected_tokens[i])
+        }
+    }
+
+    #[test]
+    fn test_identifiers() {
+        let contents = "foo bar _hello";
+        let mut scanner = Scanner::from(contents);
+
+        let tokens = scanner.scan_tokens().unwrap();
+        let expected_tokens = [
+            Token::new(
+                TokenType::Identifier,
+                String::from("foo"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Identifier,
+                String::from("bar"),
+                Literal::None,
+                NonZeroUsize::new(1).unwrap(),
+            ),
+            Token::new(
+                TokenType::Identifier,
+                String::from("_hello"),
+                Literal::None,
                 NonZeroUsize::new(1).unwrap(),
             ),
             Token::new(

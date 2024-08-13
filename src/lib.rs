@@ -1,4 +1,3 @@
-mod scanner;
 mod syntax;
 
-pub use scanner::Scanner;
+pub use syntax::scanner::Scanner;
